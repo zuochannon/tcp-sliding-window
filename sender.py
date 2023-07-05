@@ -1,4 +1,4 @@
-import sys
+# client code
 import socket
 PORT_NUMBER = 6969
 SIZE = 1024
@@ -6,8 +6,8 @@ SIZE = 1024
 
 hostName = socket.gethostname()
 
-mySocket = socket.socket( socket.AF_INET, socket.SOCK_STREAM)
-mySocket.connect((hostName,PORT_NUMBER))
+mySocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+mySocket.connect((hostName, PORT_NUMBER))
 
 msg = mySocket.recv(SIZE)
 print(msg.decode("utf-8"))
