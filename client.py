@@ -66,7 +66,7 @@ class Client:
         self.port = 12344
         self.win_size = 4  # Implement AIMD and intitial size should be 1
         self.win_start = 0
-        self.win_end = 3
+        # self.win_end = 3
         self.packets = [Packet(i) for i in range(total_packets)]
         self.ttl = [Packet(i) for i in range(total_packets)]
         self.client_socket = socket.socket(
@@ -78,7 +78,7 @@ class Client:
         self.acks_received = 0
 
         self.AIMD_FLAG = False  # Triggered when first loss occurs and won't change
-        self.loss_flag = False  # Triggered when any loss occurs.
+        self.loss_occured_flag = False  # Triggered when any loss occurs.
         # Returns to False when no old frames in a window
         # are resent
         self.MAX_WIN_SIZE = 65536  # 2^16 max window size
@@ -91,18 +91,19 @@ class Client:
         """
         # Establish the connection
         self.client_socket.connect((self.ip, self.port))
-
+        print("-------------- START of handshake --------------")
         start = time.time()
         self.client_socket.send(b"Network")
-        self.client_socket.recv(1024).decode()
+        print(f"From Server: {self.client_socket.recv(1024).decode()}")
         self.rtt = time.time() - start
+        print("-------------- END of handshake --------------")
 
-    def get_win_end(self):
-        """
-        Returns the end of the sliding window
-        Returns: An int representing the end of the sliding window
-        """
-        return self.win_start + self.win_size - 1
+    # def get_win_end(self):
+    #     """
+    #     Returns the end of the sliding window
+    #     Returns: An int representing the end of the sliding window
+    #     """
+    #     return self.win_start + self.win_size - 1
 
     # TODO: Move self.packets_sent += 1 outside of for loop
     # TODO: Add the AIMD_FLAG when resending packet
@@ -114,39 +115,45 @@ class Client:
         Arguments: None
         Return: list of packets to send
         """
-        for i in range(self.win_start, self.win_end):
+        for i in range(self.win_start, self.win_size):
             # check if the packet is already marked as received
             if not self.packets[i].received and not self.packets[i].sent:
-                msg = self.packets[i]
+                print("---- NEW PACKET SENDING ----")
+                msg = self.packets[i].sequence_num
+                packet = str(msg)
                 self.packets[i].start_timer()
-                self.client_socket.send(msg.encode())
+                print(f"Sending packet #{i}")
+                self.client_socket.send(packet.encode())
                 time_in_flight = time.time() - self.packets[i].start
+                print(f"Sent packet #{i}")
                 self.ttl[i] = time_in_flight + 0.005
                 self.packets_sent += 1      # update counter
-                print(f"Sending packet #{i}")
                 self.packets[i].sent = True
-                self.loss_flag = False
+                self.loss_occured_flag = False
 
             # TODO: Figure out logic of changing the new ttl
             elif not self.packets[i].received and self.packets[i].sent:
                 # Timed out. Resend packet
                 if self.packets[i].get_rtt() > self.ttl[i]:
+                    print("---- OLD PACKET SENDING ----")
                     self.packets[i].resent_start = time.time()
                     self.AIMD_FLAG = True
-                    self.loss_flag = True
+                    self.loss_occured_flag = True
                     self.packets[i].sent = False
                     self.send_message()
+        print("---- SENT ALL PACKETS IN WINDOW ----")
 
     # TODO: Change receive_message to receive_ack
     # TODO: Possibly call send_message after we update the win_start
     # TODO: Add AIMD to adjust window size after we update win_start
-
     def receive_message(self):
         """
         Handles receiving ACKs from server
         """
         data = self.client_socket.recv(1024).decode()
-
+        print(f"---- RECEIVED ACK: {data} ----")
+        print(f"---- WIN START: {self.win_start} ----")
+        print(F"---- WIN END: {self.win_start + self.win_size - 1}")
         if data:
             # received message
             msg = str(data)
@@ -164,23 +171,39 @@ class Client:
         """
         Increases or decreases self.win_size whether or not loss occurs
         """
-        if not self.AIMD_FLAG and self.win_size < self.MAX_WIN_SIZE:
-            self.win_size *= 2
-            self.win_end = self.get_win_end()
-            print(f"Window size increased to {self.win_size}")
-        else:
-            if not self.loss_flag and self.win_size < self.MAX_WIN_SIZE:
+        if self.win_size <= self.MAX_WIN_SIZE:
+            '''
+            Win size is at most max win size of 2^16
+            '''
+            if not self.AIMD_FLAG:
+                '''
+                No packet drop has occured. Slow start is implemented
+                '''
+                self.win_size *= 2
+                print(f"Window size doubled to {self.win_size}")
+            elif self.AIMD_FLAG and not self.loss_occured_flag:
+                '''
+                AIMD Implemented but no packet drop during the window
+                Additive Increase
+                '''
                 self.win_size += 1
-                self.win_end = self.get_win_end()
-            else:
+                print(f"Window size increased by 1 to {self.win_size}")
+            elif not self.AIMD_FLAG and self.loss_occured_flag:
+                '''
+                AIMD Implemented and packet drop occured during window
+                Multiplicative Decrease
+                '''
                 self.win_size /= 2
-                self.win_end = self.get_win_end()
+                print(f"Window size halved by 2 to {self.win_size}")
+        else:
+            self.win_size = self.MAX_WIN_SIZE
+            print(f"Window size is at it's max of {self.MAX_WIN_SIZE}")
 
 
 def runner():
     # SET WINDOW
-    total_packets = input(
-        "Enter the number of packets you want to send")  # take input
+    total_packets = int(input(
+        "Enter the number of packets you want to send: "))  # take int input
     client = Client(total_packets)
     print(f"Window Size is {client.win_size}")
 
@@ -188,6 +211,7 @@ def runner():
 
     while client.acks_received < total_packets:
         client.send_message()
+        time.sleep(client.rtt)
         client.receive_message()
 
     client.client_socket.close()  # close the connection
