@@ -115,10 +115,14 @@ class Client:
         Arguments: None
         Return: list of packets to send
         """
+        temp_win_buffer = [
+            x for x in self.packets[self.win_start: self.win_size]]
+        print("-------------- SUBSET WINDOW --------------")
+        print([templist.sequence_num for templist in temp_win_buffer])
         for i in range(self.win_start, self.win_size):
             # check if the packet is already marked as received
             if not self.packets[i].received and not self.packets[i].sent:
-                print("---- NEW PACKET SENDING ----")
+                print("-------------- NEW PACKET SENDING --------------")
                 msg = self.packets[i].sequence_num
                 packet = str(msg)
                 self.packets[i].start_timer()
@@ -135,7 +139,7 @@ class Client:
             elif not self.packets[i].received and self.packets[i].sent:
                 # Timed out. Resend packet
                 if self.packets[i].get_rtt() > self.ttl[i]:
-                    print("---- OLD PACKET SENDING ----")
+                    print("---- OLD PACKET SENDING --------------")
                     self.packets[i].resent_start = time.time()
                     self.AIMD_FLAG = True
                     self.loss_occured_flag = True
@@ -151,9 +155,10 @@ class Client:
         Handles receiving ACKs from server
         """
         data = self.client_socket.recv(1024).decode()
-        print(f"---- RECEIVED ACK: {data} ----")
-        print(f"---- WIN START: {self.win_start} ----")
-        print(F"---- WIN END: {self.win_start + self.win_size - 1}")
+        print(f"-------------- RECEIVED ACK: {data} --------------")
+        print(f"-------------- WIN START: {self.win_start} --------------")
+        print(
+            f"-------------- WIN END: {self.win_start + self.win_size - 1} --------------")
         if data:
             # received message
             msg = str(data)
@@ -162,8 +167,9 @@ class Client:
             self.packets[ack].received = True
             self.acks_received += 1  # update counter
             self.rtt = self.packets[ack].get_rtt()
-            if ack >= self.win_start:
-                self.win_start = ack
+            # if ack >= self.win_start:
+            if ack == self.win_start:
+                self.win_start += 1
                 self.update_win_size()
                 self.send_message()
 
