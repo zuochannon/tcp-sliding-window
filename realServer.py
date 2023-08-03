@@ -45,7 +45,7 @@ class Server:
         Maintains the buffer when new packets arrive and marks
         the packets as received
         Updates: start of window and buffer list
-        Assumption: window size on server size doesn't need to 
+        Assumption: window size on server side doesn't need to 
         follow AIMD because we can't assume client's loss
         """
         # update the start of the window

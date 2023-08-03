@@ -145,6 +145,8 @@ class Client:
                     self.packets[i].start_timer()
                     print(f"Sending packet #{i}")
                     self.client_socket.send(packet.encode())
+
+                    time_in_flight = time.time() - self.packets[i].start
                     self.ttl[i] = time_in_flight + 0.005
         print("---- SENT ALL PACKETS IN WINDOW ----")
 
@@ -169,9 +171,9 @@ class Client:
         print(
             f"-------------- WIN END: {self.win_start + self.win_size - 1} --------------")
         if data:
-            self.acks_received += 1  # update counter
             ack_received = data.split(",")
             ack_received.remove("")     # remove empty list items
+            self.acks_received += len(ack_received)
             print(f"-------------- RECEIVED ACK {ack_received} --------------")
             return [int(i) for i in ack_received]
 
