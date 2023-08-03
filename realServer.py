@@ -38,6 +38,21 @@ class Server:
 
     def win_end(self):
         return self.win_start + self.win_size - 1
+    
+    def update_win_start(self):
+        # increment the start of the window until there is
+        # a packet for us to wait for
+        
+        while self.packet_buffer[self.win_start]:
+            print(f"Index {self.win_start} is {self.packet_buffer[self.win_start]}")
+            print("incrementing window start")
+            self.win_start += 1
+            print(f"New window start is {self.win_start}")
+            print(f"list size is {len(self.packet_buffer)}")
+            if self.win_start >= len(self.packet_buffer):
+                self.packet_buffer.append(False)
+            print(f"Packet buffer: {self.packet_buffer}")
+        return self.win_start
 
     def update_win_size(self, seq_num):
         """
@@ -46,29 +61,29 @@ class Server:
         Assumption: window size on server size doesn't need to 
         follow AIMD because we can't assume client's loss
         """
-        print(f"---------- MARKING PACKET {seq_num} AS RECEIVED -----------")
 
         buff_size = len(self.packet_buffer)
-        if seq_num > buff_size - 1:
+        if seq_num >= buff_size - 1:
+            print(f"Adding space to the buffer")
             for i in range(buff_size, seq_num + 1):
                 self.packet_buffer.append(False)
 
         # Mark the received packet in the buffer as received
+        print(f"---------- MARKING PACKET {seq_num} AS RECEIVED -----------")
         self.packet_buffer[seq_num] = True
-
-        # increment the start of the window until there is
-        # a packet for us to wait for
-        while self.packet_buffer[self.win_start]:
-            self.win_start += 1
+        print(f"New buffer: {self.packet_buffer}")
+        self.update_win_start()
 
 
     def receive_packet(self, data):
+        """
+        """
         # receive data stream. it won't accept data packet greater than 1024 bytes
         self.pkt_counter += 1
-        pkt_received = int(data)
-
+        pkt_received = data.split(",")
+        pkt_received.remove("")     # remove empty list items
         print(f"-------------- RECEIVED PACKET {pkt_received} --------------")
-        return pkt_received
+        return [int(i) for i in pkt_received]
 
     
     def send_ack(self, ack):
@@ -92,8 +107,9 @@ def server_program():
         else:
             if data:
                 ack = server.receive_packet(data)
-                server.update_win_size(ack)
-                server.send_ack(str(ack))
+                for i in ack:
+                    server.update_win_size(i)
+                    server.send_ack(str(i))
 
 
 if __name__ == '__main__':
