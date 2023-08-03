@@ -9,13 +9,15 @@ class Server:
         self.host = socket.gethostname()
         self.ip = socket.gethostbyname(self.host)
         self.port = 12344
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # get instance
-        
+        self.socket = socket.socket(
+            socket.AF_INET, socket.SOCK_STREAM)  # get instance
+
         self.win_size = 4
         self.win_start = 0
         self.pkt_counter = 0
-        self.packet_buffer = [False for i in range(self.win_start, self.win_size)]
-        self.MAX_WIN_SIZE = 65536  # 2^16 max window size
+        self.packet_buffer = [False for i in range(
+            self.win_start, self.win_size)]
+        self.MAX_WIN_SIZE = 2**16  # 2^16 max window size
 
     def handshake(self):
         """
@@ -38,7 +40,6 @@ class Server:
 
     def win_end(self):
         return self.win_start + self.win_size - 1
-    
 
     def update_win_size(self, seq_num):
         """
@@ -50,7 +51,8 @@ class Server:
         """
         # update the start of the window
         while self.packet_buffer[self.win_start]:
-            print(f"Index {self.win_start} is {self.packet_buffer[self.win_start]}")
+            print(
+                f"Index {self.win_start} is {self.packet_buffer[self.win_start]}")
             print("incrementing window start")
             self.win_start += 1
             print(f"New window start is {self.win_start}")
@@ -65,7 +67,6 @@ class Server:
             for i in range(pkts_to_add):
                 self.packet_buffer.append(False)
 
-
     def mark_packet_received(self, seq_num):
         buff_size = len(self.packet_buffer)
         # if the sequence number is out of order,
@@ -78,7 +79,7 @@ class Server:
         # Mark the received packet in the buffer as received
         print(f"---------- MARKING PACKET {seq_num} AS RECEIVED -----------")
         self.packet_buffer[seq_num] = True
-        print(f"New buffer: {self.packet_buffer}")
+        # print(f"New buffer: {self.packet_buffer}")
 
     def receive_packets(self, data):
         """
@@ -92,8 +93,8 @@ class Server:
         self.pkt_counter += len(pkt_received)
         return [int(i) for i in pkt_received]
 
-    
     def send_ack(self, ack):
+        print(f"-------------- SENDING ACK {ack} --------------\n\n")
         self.conn.send(ack.encode())
 
 
@@ -103,7 +104,7 @@ def server_program():
 
     server.handshake()
     is_open = True
-    
+
     while is_open:
         try:
             data = server.conn.recv(1024).decode()

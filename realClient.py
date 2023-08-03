@@ -128,7 +128,7 @@ class Client:
 
                 # time packet
                 time_in_flight = time.time() - self.packets[i].start
-                self.ttl[i] = time_in_flight + 0.005
+                self.ttl[i] = time_in_flight + 1
 
                 # update counters and flags
                 self.packets_sent += 1
@@ -156,11 +156,15 @@ class Client:
         print("---- SENT ALL PACKETS IN WINDOW ----")
 
     def mark_ack_received(self, seq_num):
+        # if self.packets[seq_num].received is True:
+        #     print("Duplicate ACK")
+        # else:
         self.packets[seq_num].received = True
         self.rtt = self.packets[seq_num].get_rtt()
-
+        # self.acks_received += 1
         # update win_start
         if seq_num == self.win_start:
+            print("---- MOVING WIN_START ----")
             self.win_start += 1
 
     # TODO: Possibly call send_message after we update the win_start
@@ -173,10 +177,11 @@ class Client:
         data = self.client_socket.recv(1024).decode()
         print(f"-------------- WIN START: {self.win_start} --------------")
         print(
-            f"-------------- WIN END: {self.win_start + self.win_size - 1} --------------")
+            f"-------------- WIN END: {self.get_win_end()} --------------")
         if data:
             ack_received = data.split(",")
             ack_received.remove("")     # remove empty list items
+            # commented out bc duplicate acks
             self.acks_received += len(ack_received)
             print(
                 f"-------------- RECEIVED ACK {ack_received} --------------\n\n")
@@ -233,6 +238,7 @@ def runner():
         for i in range(0, len(acks)):
             client.mark_ack_received(i)
         client.update_win_size()
+        print(f"Number of ACKS received: {client.acks_received}")
 
     client.client_socket.close()  # close the connection
 
