@@ -39,10 +39,16 @@ class Server:
     def win_end(self):
         return self.win_start + self.win_size - 1
     
-    def update_win_start(self):
-        # increment the start of the window until there is
-        # a packet for us to wait for
-        
+
+    def update_win_size(self, seq_num):
+        """
+        Maintains the buffer when new packets arrive and marks
+        the packets as received
+        Updates: start of window and buffer list
+        Assumption: window size on server size doesn't need to 
+        follow AIMD because we can't assume client's loss
+        """
+        # update the start of the window
         while self.packet_buffer[self.win_start]:
             print(f"Index {self.win_start} is {self.packet_buffer[self.win_start]}")
             print("incrementing window start")
@@ -52,17 +58,18 @@ class Server:
             if self.win_start >= len(self.packet_buffer):
                 self.packet_buffer.append(False)
             print(f"Packet buffer: {self.packet_buffer}")
-        return self.win_start
 
-    def update_win_size(self, seq_num):
-        """
-        Maintains the buffer when new packets arrive.
-        Updates: start of window and buffer list
-        Assumption: window size on server size doesn't need to 
-        follow AIMD because we can't assume client's loss
-        """
+        # add space to window
+        pkts_to_add = self.win_end() - len(self.packet_buffer)
+        if pkts_to_add > 0:
+            for i in range(pkts_to_add):
+                self.packet_buffer.append(False)
 
+
+    def mark_packet_received(self, seq_num):
         buff_size = len(self.packet_buffer)
+        # if the sequence number is out of order,
+        # create space for other packets to arrive later
         if seq_num >= buff_size - 1:
             print(f"Adding space to the buffer")
             for i in range(buff_size, seq_num + 1):
@@ -72,17 +79,17 @@ class Server:
         print(f"---------- MARKING PACKET {seq_num} AS RECEIVED -----------")
         self.packet_buffer[seq_num] = True
         print(f"New buffer: {self.packet_buffer}")
-        self.update_win_start()
 
-
-    def receive_packet(self, data):
+    def receive_packets(self, data):
         """
+        Parses the packets. Packets can be received in a concatenated order
+        and must be separated for the packets to be processed individually
         """
         # receive data stream. it won't accept data packet greater than 1024 bytes
-        self.pkt_counter += 1
         pkt_received = data.split(",")
         pkt_received.remove("")     # remove empty list items
         print(f"-------------- RECEIVED PACKET {pkt_received} --------------")
+        self.pkt_counter += len(pkt_received)
         return [int(i) for i in pkt_received]
 
     
@@ -106,10 +113,11 @@ def server_program():
             is_open = False
         else:
             if data:
-                ack = server.receive_packet(data)
+                ack = server.receive_packets(data)
                 for i in ack:
+                    server.mark_packet_received(i)
                     server.update_win_size(i)
-                    server.send_ack(str(i))
+                    server.send_ack(str(i) + ",")
 
 
 if __name__ == '__main__':
