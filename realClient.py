@@ -111,8 +111,10 @@ class Client:
         Arguments: None
         Return: list of packets to send
         """
+        print(f"Start: {self.win_start}")
+        print(f"End: {self.get_win_end()}")
         # Iterate through the sliding window
-        for i in range(self.win_start, self.win_size):
+        for i in range(self.win_start, self.get_win_end() + 1):
             msg = self.packets[i].sequence_num
             packet = str(msg) + ","
 
@@ -222,9 +224,12 @@ def runner():
 
     while client.acks_received < total_packets:
         client.send_message()
+        print("OUT OF SEND_MESSAGE()")
         time.sleep(client.rtt)
         acks = client.receive_acks()
+        print("OUT OF RECEIVE_ACKS()")
         acks.sort()
+        print(f"Length of ACK list: {len(acks)}")
         for i in range(0, len(acks)):
             client.mark_ack_received(i)
         client.update_win_size()
