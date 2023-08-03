@@ -23,6 +23,7 @@ import time
 # seq # dropped over time
 # Set up a try catch statement to handle potential server-client errors
 
+
 class Packet:
     """
     Packet object that manages its own data (sequence number) and its timer.
@@ -51,6 +52,7 @@ class Packet:
         """
         return time.time() - self.start
 
+
 class Client:
     """
     Client object that simulates the actions of a client server.
@@ -76,8 +78,7 @@ class Client:
         self.loss_occured_flag = False  # Triggered when any loss occurs.
         # Returns to False when no old frames in a window
         # are resent
-        self.MAX_WIN_SIZE = 65536  # 2^16 max window size
-
+        self.MAX_WIN_SIZE = 2**16  # 2^16 max window size
 
     def handshake(self):
         """
@@ -92,14 +93,14 @@ class Client:
         self.client_socket.send(b"Network")
         print(f"From Server: {self.client_socket.recv(1024).decode()}")
         self.rtt = time.time() - start
-        print("-------------- END of handshake --------------")
+        print("-------------- END of handshake --------------\n\n")
 
-    # def get_win_end(self):
-    #     """
-    #     Returns the end of the sliding window
-    #     Returns: An int representing the end of the sliding window
-    #     """
-    #     return self.win_start + self.win_size - 1
+    def get_win_end(self):
+        """
+        Returns the end of the sliding window
+        Returns: An int representing the end of the sliding window
+        """
+        return self.win_start + self.win_size - 1
 
     # TODO: Have the ttl for packet 0 be the rtt and then base the ttl on the prev ttl
     # TODO: Turn time_in_flight into a small function
@@ -108,12 +109,12 @@ class Client:
         Sends all messages in the window
         Arguments: None
         Return: list of packets to send
-        """        
+        """
         # Iterate through the sliding window
         for i in range(self.win_start, self.win_size):
             msg = self.packets[i].sequence_num
             packet = str(msg) + ","
-            
+
             # Case 1: sending the packet for the first time
             if not self.packets[i].received and not self.packets[i].sent:
                 # send packet
@@ -139,9 +140,10 @@ class Client:
                     # Update loss flags
                     self.AIMD_FLAG = True
                     self.loss_occured_flag = True
-                    
+
                     # send packet
-                    print(f"---- RESENDING PACKET {i} --------------")
+                    print(
+                        f"-------------- RESENDING PACKET {i} --------------")
                     self.packets[i].start_timer()
                     print(f"Sending packet #{i}")
                     self.client_socket.send(packet.encode())
@@ -150,7 +152,6 @@ class Client:
                     self.ttl[i] = time_in_flight + 0.005
         print("---- SENT ALL PACKETS IN WINDOW ----")
 
-    
     def mark_ack_received(self, seq_num):
         self.packets[seq_num].received = True
         self.rtt = self.packets[seq_num].get_rtt()
@@ -158,10 +159,10 @@ class Client:
         # update win_start
         if seq_num == self.win_start:
             self.win_start += 1
-    
 
     # TODO: Possibly call send_message after we update the win_start
     # TODO: Add AIMD to adjust window size after we update win_start
+
     def receive_acks(self):
         """
         Handles receiving ACKs from server
@@ -176,7 +177,6 @@ class Client:
             self.acks_received += len(ack_received)
             print(f"-------------- RECEIVED ACK {ack_received} --------------")
             return [int(i) for i in ack_received]
-
 
     def update_win_size(self):
         """
@@ -201,6 +201,11 @@ class Client:
         else:
             self.win_size = self.MAX_WIN_SIZE
             print(f"Window size is at it's max of {self.MAX_WIN_SIZE}")
+
+        if self.get_win_end() > len(self.packets) - 1:
+            print("Readjusting Window Size")
+            self.win_size = len(self.packets) - self.win_start
+            print(f"Window size is now {self.win_size}")
 
 
 def runner():
