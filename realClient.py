@@ -193,7 +193,7 @@ class Client:
                 # Additive Increase
                 self.win_size += 1
                 print(f"Window size increased by 1 to {self.win_size}")
-            elif not self.AIMD_FLAG and self.loss_occured_flag:
+            elif self.AIMD_FLAG or self.loss_occured_flag:
                 # AIMD Implemented and packet drop occured during window
                 # Multiplicative Decrease
                 self.win_size /= 2
