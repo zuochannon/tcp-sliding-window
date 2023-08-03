@@ -15,6 +15,7 @@ Next, change the IP line in the Client init method and then run the client.
 
 import socket
 import time
+import math
 
 # TODO: GRAPH
 # csv for pandas
@@ -175,7 +176,8 @@ class Client:
             ack_received = data.split(",")
             ack_received.remove("")     # remove empty list items
             self.acks_received += len(ack_received)
-            print(f"-------------- RECEIVED ACK {ack_received} --------------")
+            print(
+                f"-------------- RECEIVED ACK {ack_received} --------------\n\n")
             return [int(i) for i in ack_received]
 
     def update_win_size(self):
@@ -196,7 +198,8 @@ class Client:
             elif self.AIMD_FLAG or self.loss_occured_flag:
                 # AIMD Implemented and packet drop occured during window
                 # Multiplicative Decrease
-                self.win_size /= 2
+                old_win_size = self.win_size
+                self.win_size = math.ceil(old_win_size / 2)
                 print(f"Window size halved by 2 to {self.win_size}")
         else:
             self.win_size = self.MAX_WIN_SIZE
@@ -222,6 +225,8 @@ def runner():
         time.sleep(client.rtt)
         acks = client.receive_acks()
         acks.sort()
+        for i in range(0, len(acks)):
+            client.mark_ack_received(i)
         client.update_win_size()
 
     client.client_socket.close()  # close the connection
