@@ -90,7 +90,7 @@ class Server:
         """
         # receive data stream. it won't accept data packet greater than 1024 bytes
         pkt_received = data.split(",")
-        pkt_received.remove("")     # remove empty list items
+        pkt_received = [x for x in pkt_received if len(x) != 0]     # remove empty list items
         try:
             pkt_received.remove("FIN")
         except ValueError:
@@ -113,7 +113,7 @@ def server_program():
     start = time.time()
     server.handshake()
     rtt = time.time() - start
-    
+
     while not server.fin:
         data = server.conn.recv(1024).decode()
         if not data and rtt < time.time() - start:
@@ -129,7 +129,7 @@ def server_program():
                 server.send_ack(str(i) + ",")
             if server.fin:
                 server.send_ack("FIN,")
-        
+
         # try:
         #     data = server.conn.recv(1024).decode()
         # except TimeoutError:

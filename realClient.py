@@ -177,7 +177,7 @@ class Client:
             f"-------------- WIN END: {self.get_win_end()} --------------")
         if data:
             ack_received = data.split(",")
-            ack_received.remove("")     # remove empty list items
+            ack_received = [x for x in ack_received if len(x) != 0]     # remove empty list items
             # commented out bc duplicate acks
             # self.acks_received += len(ack_received)
 
