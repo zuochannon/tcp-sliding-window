@@ -64,7 +64,7 @@ class Client:
     """
 
     def __init__(self, total_packets):
-        self.ip = "192.168.1.129"  # TODO: Change depending on the host
+        self.ip = "192.168.1.67"  # TODO: Change depending on the host
         self.port = 12344
 
         self.win_size = 1  # Implement AIMD and intitial size should be 1
