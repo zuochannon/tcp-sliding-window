@@ -7,6 +7,7 @@ import time
 class Server:
     def __init__(self):
         self.host = socket.gethostname()
+        print(self.host)
         self.ip = socket.gethostbyname(self.host)
         self.port = 12344
         self.socket = socket.socket(
@@ -129,6 +130,8 @@ def server_program():
                 server.send_ack(str(i) + ",")
             if server.fin:
                 server.send_ack("FIN,")
+    print(f"Server IP: {server.ip}")
+    print(f"Client IP: {server.address}")
 
         # try:
         #     data = server.conn.recv(1024).decode()
