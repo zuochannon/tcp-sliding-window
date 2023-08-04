@@ -156,9 +156,10 @@ class Client:
         if packet.sequence_num == index:
             # update the Client's expected rtt
             self.rtt = self.packets[index].get_time_since_sent() + 0.02
-            print(f"Marking {index} as received")
-            self.packets[index].received = True
-            self.acks_received += 1
+            if not self.packets[index].received:
+                print(f"Marking {index} as received")
+                self.packets[index].received = True
+                self.acks_received += 1
         else:
             print(f"ERROR: index and seq num do not match")
         print(f"----- TOTAL ACKS RECEIVED: {self.acks_received}")
@@ -180,9 +181,6 @@ class Client:
             ack_received = data.split(",")
             ack_received = [x for x in ack_received if len(
                 x) != 0]     # remove empty list items
-            # commented out bc duplicate acks
-            # self.acks_received += len(ack_received)
-
             # find "FIN" ack
             try:
                 # remove fin to avoid affecting processing remaining packets
