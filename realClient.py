@@ -295,6 +295,7 @@ def runner():
     plt.ylabel('Segements Dropped')
     plt.plot(seg_dropped_x, seg_dropped_y)
     plt.title('Segments Dropped Over Time')
+    plt.savefig("SEGMENTS-Dropped.jpg")
 
 
 if __name__ == '__main__':

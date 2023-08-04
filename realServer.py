@@ -2,6 +2,7 @@
 
 import socket
 import time
+import matplotlib.pyplot as plt
 
 
 class Server:
@@ -20,6 +21,7 @@ class Server:
             self.win_start, self.win_size)]
         self.MAX_WIN_SIZE = 2**16  # 2^16 max window size
 
+        self.pkt_received_dict = {}
         self.fin = False
 
     def handshake(self):
@@ -82,6 +84,9 @@ class Server:
         # Mark the received packet in the buffer as received
         print(f"---------- MARKING PACKET {seq_num} AS RECEIVED -----------")
         self.packet_buffer[seq_num] = True
+        if seq_num % 1000 == 0:
+            self.pkt_received_dict[seq_num] = self.pkt_counter
+
         # print(f"New buffer: {self.packet_buffer}")
 
     def receive_packets(self, data):
@@ -91,7 +96,8 @@ class Server:
         """
         # receive data stream. it won't accept data packet greater than 1024 bytes
         pkt_received = data.split(",")
-        pkt_received = [x for x in pkt_received if len(x) != 0]     # remove empty list items
+        pkt_received = [x for x in pkt_received if len(
+            x) != 0]     # remove empty list items
         try:
             pkt_received.remove("FIN")
         except ValueError:
@@ -133,19 +139,14 @@ def server_program():
     print(f"Server IP: {server.ip}")
     print(f"Client IP: {server.address}")
 
-        # try:
-        #     data = server.conn.recv(1024).decode()
-        # except TimeoutError:
-        #     print("Closing socket, no packets being sent")
-        #     server.conn.close()
-        #     is_open = False
-        # else:
-        #     if data:
-        #         ack = server.receive_packets(data)
-        #         for i in ack:
-        #             server.mark_packet_received(i)
-        #             server.update_win_size(i)
-        #             server.send_ack(str(i) + ",")
+    serv_pkt_recv_x = server.pkt_received_dict.keys()
+    serv_pkt_recv_y = server.pkt_received_dict.values()
+    plt.plot(serv_pkt_recv_x, serv_pkt_recv_y)
+
+    plt.xlabel('Segments')
+    plt.ylabel('Segments Received')
+    plt.title('Segments Over Time')
+    plt.savefig("Server-Segments-Received.jpg")
 
 
 if __name__ == '__main__':
