@@ -28,6 +28,8 @@ class Server:
         self.pkt_received_dict = {}
         self.fin = False
 
+        self.start = time.time()
+
     def handshake(self):
         """
         Performs the three way handshake. Creates attributes:
@@ -98,7 +100,7 @@ class Server:
         print(f"---------- MARKING PACKET {seq_num} AS RECEIVED -----------")
         self.packet_buffer[seq_num] = True
         if seq_num % 1000 == 0:
-            self.pkt_received_dict[seq_num] = self.pkt_counter
+            self.pkt_received_dict[seq_num] = time.time() - self.start
 
     def receive_packets(self, data):
         """
@@ -157,8 +159,8 @@ def server_program():
     serv_pkt_recv_y = server.pkt_received_dict.values()
     plt.plot(serv_pkt_recv_x, serv_pkt_recv_y)
 
-    plt.xlabel('Segments')
-    plt.ylabel('Segments Received')
+    plt.xlabel('Segments Received')
+    plt.ylabel('Time in Seconds')
     plt.title('Segments Over Time')
     plt.savefig("Sophia-Sorensen-Channon-Zuo-Server-Segments-Received.jpg")
 
