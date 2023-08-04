@@ -146,7 +146,7 @@ def server_program():
     plt.xlabel('Segments')
     plt.ylabel('Segments Received')
     plt.title('Segments Over Time')
-    plt.savefig("Server-Segments-Received.jpg")
+    plt.savefig("Sophia-Sorensen-Channon-Zuo-Server-Segments-Received.jpg")
 
 
 if __name__ == '__main__':
