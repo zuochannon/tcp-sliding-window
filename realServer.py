@@ -1,7 +1,7 @@
 # Selective Repeat ARQ - Server Side Code
 
 import socket
-import random
+import time
 
 
 class Server:
@@ -16,6 +16,8 @@ class Server:
         self.pkt_counter = 0
         self.packet_buffer = [False for i in range(self.win_start, self.win_size)]
         self.MAX_WIN_SIZE = 65536  # 2^16 max window size
+
+        self.fin = False
 
     def handshake(self):
         """
@@ -88,6 +90,12 @@ class Server:
         # receive data stream. it won't accept data packet greater than 1024 bytes
         pkt_received = data.split(",")
         pkt_received.remove("")     # remove empty list items
+        try:
+            pkt_received.remove("FIN")
+        except ValueError:
+            print(f"Client is not done sending packets")
+        else:
+            self.fin = True
         print(f"-------------- RECEIVED PACKET {pkt_received} --------------")
         self.pkt_counter += len(pkt_received)
         return [int(i) for i in pkt_received]
@@ -101,23 +109,39 @@ def server_program():
     server = Server()
     print(f"Server IP: {server.ip}")
 
+    start = time.time()
     server.handshake()
-    is_open = True
+    rtt = time.time() - start
     
-    while is_open:
-        try:
-            data = server.conn.recv(1024).decode()
-        except TimeoutError:
+    while not server.fin:
+        data = server.conn.recv(1024).decode()
+        if not data and rtt < time.time() - start:
             print("Closing socket, no packets being sent")
             server.conn.close()
-            is_open = False
-        else:
-            if data:
-                ack = server.receive_packets(data)
-                for i in ack:
-                    server.mark_packet_received(i)
-                    server.update_win_size(i)
-                    server.send_ack(str(i) + ",")
+        elif data:
+            # create 1:1 ack for packet received
+            ack = server.receive_packets(data)
+            print(f"Acks to send: {ack}")
+            for i in ack:
+                server.mark_packet_received(i)
+                server.update_win_size(i)
+                server.send_ack(str(i) + ",")
+            if server.fin:
+                server.send_ack("FIN,")
+        
+        # try:
+        #     data = server.conn.recv(1024).decode()
+        # except TimeoutError:
+        #     print("Closing socket, no packets being sent")
+        #     server.conn.close()
+        #     is_open = False
+        # else:
+        #     if data:
+        #         ack = server.receive_packets(data)
+        #         for i in ack:
+        #             server.mark_packet_received(i)
+        #             server.update_win_size(i)
+        #             server.send_ack(str(i) + ",")
 
 
 if __name__ == '__main__':
