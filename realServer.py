@@ -6,6 +6,10 @@ import matplotlib.pyplot as plt
 
 
 class Server:
+    """ 
+    Server object that simulates the actions of a server
+    """
+
     def __init__(self):
         self.host = socket.gethostname()
         print(self.host)
@@ -44,6 +48,11 @@ class Server:
         self.conn.send(b"Success")
 
     def win_end(self):
+        """
+        Returns window end
+        Returns:
+            int: End index of window
+        """
         return self.win_start + self.win_size - 1
 
     def update_win_size(self, seq_num):
@@ -64,7 +73,6 @@ class Server:
             print(f"list size is {len(self.packet_buffer)}")
             if self.win_start >= len(self.packet_buffer):
                 self.packet_buffer.append(False)
-            # print(f"Packet buffer: {self.packet_buffer}")
 
         # add space to window
         pkts_to_add = self.win_end() - len(self.packet_buffer)
@@ -73,6 +81,11 @@ class Server:
                 self.packet_buffer.append(False)
 
     def mark_packet_received(self, seq_num):
+        """
+        Marks the packet received
+        Args:
+            seq_num (int): Sequence number of the packet
+        """
         buff_size = len(self.packet_buffer)
         # if the sequence number is out of order,
         # create space for other packets to arrive later
@@ -86,8 +99,6 @@ class Server:
         self.packet_buffer[seq_num] = True
         if seq_num % 1000 == 0:
             self.pkt_received_dict[seq_num] = self.pkt_counter
-
-        # print(f"New buffer: {self.packet_buffer}")
 
     def receive_packets(self, data):
         """
@@ -109,6 +120,9 @@ class Server:
         return [int(i) for i in pkt_received]
 
     def send_ack(self, ack):
+        """
+        Sends an ACK for the packet received
+        """
         print(f"-------------- SENDING ACK {ack} --------------\n\n")
         self.conn.send(ack.encode())
 
