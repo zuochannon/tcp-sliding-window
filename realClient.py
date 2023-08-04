@@ -62,6 +62,7 @@ class Packet:
         return str(self.sequence_num) + " " + str(self.received)
     
 
+
 class Client:
     """
     Client object that simulates the actions of a client server.
@@ -152,7 +153,6 @@ class Client:
                     self.packets[i].sent = True
 
 
-
     def mark_ack_received(self, index):
         # if self.packets[seq_num].received is True:
         #     print("Duplicate ACK")
@@ -166,7 +166,7 @@ class Client:
             self.acks_received += 1
         else:
             print(f"ERROR: index and seq num do not match")
-        
+
 
     # TODO: Possibly call send_message after we update the win_start
     # TODO: Add AIMD to adjust window size after we update win_start
@@ -198,6 +198,7 @@ class Client:
                 f"-------------- RECEIVED ACK {ack_received} --------------\n\n")
             return [int(i) for i in ack_received]
 
+            
     def update_win_size(self):
         """
         Increases or decreases self.win_size whether or not loss occurs
