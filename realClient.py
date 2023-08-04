@@ -177,7 +177,8 @@ class Client:
             f"-------------- WIN END: {self.get_win_end()} --------------")
         if data:
             ack_received = data.split(",")
-            ack_received = [x for x in ack_received if len(x) != 0]     # remove empty list items
+            ack_received = [x for x in ack_received if len(
+                x) != 0]     # remove empty list items
             # commented out bc duplicate acks
             # self.acks_received += len(ack_received)
 
@@ -201,6 +202,7 @@ class Client:
         while self.packets[self.win_start].received:
             print("---- MOVING WIN_START ----")
             self.win_start += 1
+            self.loss_occured_flag = False
             print(f"Win start is {self.win_start}")
 
         if self.win_size <= self.MAX_WIN_SIZE:
@@ -242,7 +244,7 @@ def runner():
     client.handshake()      # perform handshake and set RTT
 
     while not client.fin:
-        print(f"{client.packets}")
+        # print(f"{client.packets}")
         client.send_window()
         # allow time for packets to be sent
         # time.sleep(client.rtt)
@@ -257,6 +259,7 @@ def runner():
             client.mark_ack_received(acks[i])
         client.update_win_size()
         print(f"Number of ACKS received: {client.acks_received}")
+    print(f"AIMD Flag triggered: {client.AIMD_FLAG}")
 
     client.client_socket.close()  # close the connection
 

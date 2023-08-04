@@ -61,7 +61,7 @@ class Server:
             print(f"list size is {len(self.packet_buffer)}")
             if self.win_start >= len(self.packet_buffer):
                 self.packet_buffer.append(False)
-            print(f"Packet buffer: {self.packet_buffer}")
+            # print(f"Packet buffer: {self.packet_buffer}")
 
         # add space to window
         pkts_to_add = self.win_end() - len(self.packet_buffer)
