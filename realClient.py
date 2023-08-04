@@ -287,7 +287,7 @@ def runner():
     plt.xlabel('Segments Sent')
     plt.ylabel('Window Size')
     plt.title('Client Window Size Over Time')
-    plt.savefig("Client-Window-Size.jpg")
+    plt.savefig("Sophia-Sorensen-Channon-Zuo-Client-Window-Size.jpg")
 
     seg_dropped_x = client.packets_dropped_dict.keys()
     seg_dropped_y = client.packets_dropped_dict.values()
@@ -295,7 +295,7 @@ def runner():
     plt.ylabel('Segements Dropped')
     plt.plot(seg_dropped_x, seg_dropped_y)
     plt.title('Segments Dropped Over Time')
-    plt.savefig("SEGMENTS-Dropped.jpg")
+    plt.savefig("Sophia-Sorensen-Channon-Zuo-SEGMENTS-Dropped.jpg")
 
 
 if __name__ == '__main__':
