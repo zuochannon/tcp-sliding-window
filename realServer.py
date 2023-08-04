@@ -28,7 +28,7 @@ class Server:
         self.pkt_received_dict = {}
         self.fin = False
 
-        self.start = time.time()
+        self.start = 0
 
     def handshake(self):
         """
@@ -48,6 +48,7 @@ class Server:
         print("Connection from: ", str(self.address))
         print(f"From Client: {self.conn.recv(1024).decode()}")
         self.conn.send(b"Success")
+        self.start = time.time()
 
     def win_end(self):
         """
