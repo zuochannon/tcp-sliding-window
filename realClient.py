@@ -16,6 +16,7 @@ Next, change the IP line in the Client init method and then run the client.
 import socket
 import time
 import math
+import matplotlib.pyplot as plt
 
 # TODO: GRAPH
 # csv for pandas
@@ -241,7 +242,7 @@ def runner():
     print(f"Window Size is {client.win_size}")
 
     client.handshake()      # perform handshake and set RTT
-    # window_size_graph = {}
+    window_size_graph = {}
 
     while not client.fin:
         # print(f"{client.packets}")
@@ -257,15 +258,27 @@ def runner():
         print(f"Acks to mark received: {acks}")
         for i in range(len(acks)):
             client.mark_ack_received(acks[i])
+            if acks[i] % 1000 == 0:
+                window_size_graph[acks[i]] = client.win_size
         client.update_win_size()
         print(f"Number of ACKS received: {client.acks_received}")
     print(f"AIMD Flag triggered: {client.AIMD_FLAG}")
     # subtracting 1 bc of FIN ack
     print(f"Packets sent: {client.packets_sent - 1}")
     print(f"Goodput: {client.acks_received/(client.packets_sent - 1)}")
-    # print(f"Window Size (value): {window_size_graph.values}")
 
     client.client_socket.close()  # close the connection
+
+    # TODO: Move to another function
+    win_size_x = window_size_graph.keys()
+    win_size_y = window_size_graph.values()
+    plt.plot(win_size_x, win_size_y)
+
+    plt.xlabel('Segments Sent')
+    plt.ylabel('Window Size')
+    plt.title('Client Window Size Over Time')
+
+    plt.savefig("Client-Window-Size.jpg")
 
 
 if __name__ == '__main__':
