@@ -52,15 +52,12 @@ class Packet:
         Returns: An integer representing the rtt of the packet
         """
         return time.time() - self.start
-    
 
     def __str__(self):
         return str(self.sequence_num)
-    
 
     def __repr__(self):
         return str(self.sequence_num) + " " + str(self.received)
-    
 
 
 class Client:
@@ -103,7 +100,7 @@ class Client:
         start = time.time()
         self.client_socket.send(b"Network")
         print(f"From Server: {self.client_socket.recv(1024).decode()}")
-        self.rtt = time.time() - start
+        self.rtt = time.time() - start + 0.02
         print("-------------- END of handshake --------------\n\n")
 
     def get_win_end(self):
@@ -115,8 +112,8 @@ class Client:
         if win_end >= len(self.packets) - 1:
             print(f"Reaching end of all packets, win_end is end of list")
             return len(self.packets)
-        else: return win_end
-
+        else:
+            return win_end
 
     def send_message(self, packet):
         msg = str(packet.sequence_num) + ","
@@ -141,7 +138,8 @@ class Client:
                 # if they have went over time, set up packet to resend
                 if self.packets[i].sent and self.rtt < self.packets[i].get_time_since_sent():
                     print(f"Packet {i} timed out, setting up to resend")
-                    self.packets[i].sent = False    # change to unsent to pass sending check
+                    # change to unsent to pass sending check
+                    self.packets[i].sent = False
                     self.loss_occured_flag = True
                     self.AIMD_FLAG = True
 
@@ -152,21 +150,17 @@ class Client:
                     self.send_message(self.packets[i])
                     self.packets[i].sent = True
 
-
     def mark_ack_received(self, index):
-        # if self.packets[seq_num].received is True:
-        #     print("Duplicate ACK")
-        # else:
         packet = self.packets[index]
         if packet.sequence_num == index:
             # update the Client's expected rtt
-            self.rtt = self.packets[index].get_time_since_sent()
+            self.rtt = self.packets[index].get_time_since_sent() + 0.02
             print(f"Marking {index} as received")
             self.packets[index].received = True
             self.acks_received += 1
         else:
             print(f"ERROR: index and seq num do not match")
-
+        print(f"----- TOTAL ACKS RECEIVED: {self.acks_received}")
 
     # TODO: Possibly call send_message after we update the win_start
     # TODO: Add AIMD to adjust window size after we update win_start
@@ -185,11 +179,12 @@ class Client:
             ack_received = data.split(",")
             ack_received.remove("")     # remove empty list items
             # commented out bc duplicate acks
-            self.acks_received += len(ack_received)
+            # self.acks_received += len(ack_received)
 
             # find "FIN" ack
             try:
-                ack_received.remove("FIN")  # remove fin to avoid affecting processing remaining packets
+                # remove fin to avoid affecting processing remaining packets
+                ack_received.remove("FIN")
             except ValueError:
                 print(f"Not at end of total packets (no FIN)")
             else:
@@ -198,7 +193,6 @@ class Client:
                 f"-------------- RECEIVED ACK {ack_received} --------------\n\n")
             return [int(i) for i in ack_received]
 
-            
     def update_win_size(self):
         """
         Increases or decreases self.win_size whether or not loss occurs
@@ -231,7 +225,8 @@ class Client:
             print(f"Window size is at it's max of {self.MAX_WIN_SIZE}")
 
         # update the window size if we are reaching the end of the packet list
-        if self.get_win_end() == len(self.packets) - 1:
+        # if self.get_win_end() == len(self.packets) - 1:
+        if self.get_win_end() > len(self.packets) - 1:
             print("Readjusting Window Size")
             self.win_size = len(self.packets) - self.win_start
             print(f"Window size is now {self.win_size}")
@@ -250,7 +245,7 @@ def runner():
         print(f"{client.packets}")
         client.send_window()
         # allow time for packets to be sent
-        time.sleep(client.rtt)
+        # time.sleep(client.rtt)
 
         # handle acks
         acks = client.receive_acks()
