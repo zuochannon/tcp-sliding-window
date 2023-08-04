@@ -118,6 +118,7 @@ class Client:
     def send_message(self, packet):
         msg = str(packet.sequence_num) + ","
         self.client_socket.send(msg.encode())
+        self.packets_sent += 1
 
     # TODO: Have the ttl for packet 0 be the rtt and then base the ttl on the prev ttl
     # TODO: Turn time_in_flight into a small function
@@ -242,6 +243,7 @@ def runner():
     print(f"Window Size is {client.win_size}")
 
     client.handshake()      # perform handshake and set RTT
+    # window_size_graph = {}
 
     while not client.fin:
         # print(f"{client.packets}")
@@ -260,6 +262,10 @@ def runner():
         client.update_win_size()
         print(f"Number of ACKS received: {client.acks_received}")
     print(f"AIMD Flag triggered: {client.AIMD_FLAG}")
+    # subtracting 1 bc of FIN ack
+    print(f"Packets sent: {client.packets_sent - 1}")
+    print(f"Goodput: {client.acks_received/(client.packets_sent - 1)}")
+    # print(f"Window Size (value): {window_size_graph.values}")
 
     client.client_socket.close()  # close the connection
 
