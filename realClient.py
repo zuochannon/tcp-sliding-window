@@ -68,6 +68,7 @@ class Client:
 
     def __init__(self, total_packets):
         self.ip = ""  # TODO: Change depending on the host
+
         self.port = 12344
         self.win_size = 4  # Implement AIMD and intitial size should be 1
         self.win_start = 0
@@ -88,6 +89,9 @@ class Client:
         # Returns to False when no old frames in a window
         # are resent
         self.MAX_WIN_SIZE = 2**16  # 2^16 max window size
+
+        self.packets_dropped_dict = {}
+        self.packets_dropped_counter = 0
 
     def handshake(self):
         """
@@ -144,6 +148,10 @@ class Client:
                     self.packets[i].sent = False
                     self.loss_occured_flag = True
                     self.AIMD_FLAG = True
+                    self.packets_dropped_counter += 1
+                    # Graph purposes
+                    if i % 1000 == 0:
+                        self.packets_dropped_dict[i] = self.packets_dropped_counter
 
                 # only send packets queued to send
                 if not self.packets[i].sent:
@@ -262,8 +270,10 @@ def runner():
                 window_size_graph[acks[i]] = client.win_size
         client.update_win_size()
         print(f"Number of ACKS received: {client.acks_received}")
-    print(f"AIMD Flag triggered: {client.AIMD_FLAG}")
+    # print(f"AIMD Flag triggered: {client.AIMD_FLAG}")
     # subtracting 1 bc of FIN ack
+    print(" ---- ACKS RECEIVED, PACKETS SENT, GOOD-PUT ----")
+    print(f"Number of ACKS received: {client.acks_received}")
     print(f"Packets sent: {client.packets_sent - 1}")
     print(f"Goodput: {client.acks_received/(client.packets_sent - 1)}")
 
@@ -277,8 +287,14 @@ def runner():
     plt.xlabel('Segments Sent')
     plt.ylabel('Window Size')
     plt.title('Client Window Size Over Time')
-
     plt.savefig("Client-Window-Size.jpg")
+
+    seg_dropped_x = client.packets_dropped_dict.keys()
+    seg_dropped_y = client.packets_dropped_dict.values()
+    plt.xlabel('Segments Sent')
+    plt.ylabel('Segements Dropped')
+    plt.plot(seg_dropped_x, seg_dropped_y)
+    plt.title('Segments Dropped Over Time')
 
 
 if __name__ == '__main__':
