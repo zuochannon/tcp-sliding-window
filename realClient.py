@@ -18,13 +18,6 @@ import time
 import math
 import matplotlib.pyplot as plt
 
-# TODO: GRAPH
-# csv for pandas
-# window size over time (AKA AIMD)
-# seq # received over time (1000 over RTT)
-# seq # dropped over time
-# Set up a try catch statement to handle potential server-client errors
-
 
 class Packet:
     """
@@ -55,6 +48,10 @@ class Packet:
         return time.time() - self.start
 
     def __str__(self):
+        """
+        Overrides the print statement for printing packet
+        Returns: A string representation of the packet's sequence number
+        """
         return str(self.sequence_num)
 
     def __repr__(self):
@@ -67,31 +64,30 @@ class Client:
     """
 
     def __init__(self, total_packets):
-        self.ip = ""  # TODO: Change depending on the host
-
+        self.ip = "192.168.1.129"  # TODO: Change depending on the host
         self.port = 12344
-        self.win_size = 4  # Implement AIMD and intitial size should be 1
+
+        self.win_size = 1  # Implement AIMD and intitial size should be 1
         self.win_start = 0
         self.packets = [Packet(i) for i in range(total_packets)]
         self.packets.append(Packet("FIN"))
+
         self.ttl = [Packet(i) for i in range(total_packets)]
         self.client_socket = socket.socket(
             socket.AF_INET, socket.SOCK_STREAM)  # instantiate
 
         self.rtt = 0
         self.estimated_rtt = 0
+
         self.packets_sent = 0
         self.acks_received = 0
-
-        self.AIMD_FLAG = False  # Triggered when first loss occurs and won't change
-        self.loss_occured_flag = False  # Triggered when any loss occurs.
-        self.fin = False
-        # Returns to False when no old frames in a window
-        # are resent
-        self.MAX_WIN_SIZE = 2**16  # 2^16 max window size
-
         self.packets_dropped_dict = {}
         self.packets_dropped_counter = 0
+
+        self.AIMD_FLAG = False  # Triggered when first loss occurs and won't change
+        self.MAX_WIN_SIZE = 2**16  # 2^16 max window size
+        self.loss_occured_flag = False  # Triggered when any loss occurs.
+        self.fin = False
 
     def handshake(self):
         """
@@ -115,12 +111,16 @@ class Client:
         """
         win_end = self.win_start + self.win_size
         if win_end >= len(self.packets) - 1:
-            print(f"Reaching end of all packets, win_end is end of list")
+            print("Reaching end of all packets, win_end is end of list")
             return len(self.packets)
         else:
             return win_end
 
     def send_message(self, packet):
+        """
+        Sends sequence number to server
+        Args: packet (Packet): Packet object to send
+        """
         msg = str(packet.sequence_num) + ","
         self.client_socket.send(msg.encode())
         self.packets_sent += 1
@@ -161,6 +161,11 @@ class Client:
                     self.packets[i].sent = True
 
     def mark_ack_received(self, index):
+        """
+        Marks an ACK as received
+        Args:
+            index (int): Index of ACK to mark received
+        """
         packet = self.packets[index]
         if packet.sequence_num == index:
             # update the Client's expected rtt
@@ -170,11 +175,8 @@ class Client:
                 self.packets[index].received = True
                 self.acks_received += 1
         else:
-            print(f"ERROR: index and seq num do not match")
+            print("ERROR: index and seq num do not match")
         print(f"----- TOTAL ACKS RECEIVED: {self.acks_received}")
-
-    # TODO: Possibly call send_message after we update the win_start
-    # TODO: Add AIMD to adjust window size after we update win_start
 
     def receive_acks(self):
         """
@@ -195,7 +197,7 @@ class Client:
                 # remove fin to avoid affecting processing remaining packets
                 ack_received.remove("FIN")
             except ValueError:
-                print(f"Not at end of total packets (no FIN)")
+                print("Not at end of total packets (no FIN)")
             else:
                 self.fin = True
             print(
@@ -235,7 +237,6 @@ class Client:
             print(f"Window size is at it's max of {self.MAX_WIN_SIZE}")
 
         # update the window size if we are reaching the end of the packet list
-        # if self.get_win_end() == len(self.packets) - 1:
         if self.get_win_end() > len(self.packets) - 1:
             print("Readjusting Window Size")
             self.win_size = len(self.packets) - self.win_start
@@ -270,7 +271,6 @@ def runner():
                 window_size_graph[acks[i]] = client.win_size
         client.update_win_size()
         print(f"Number of ACKS received: {client.acks_received}")
-    # print(f"AIMD Flag triggered: {client.AIMD_FLAG}")
     # subtracting 1 bc of FIN ack
     print(" ---- ACKS RECEIVED, PACKETS SENT, GOOD-PUT ----")
     print(f"Number of ACKS received: {client.acks_received}")
